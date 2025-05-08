@@ -1,0 +1,70 @@
+[
+  {
+    "id": 1,
+    "name": "Uttara Motors Ltd (UML) CRM System",
+    "description": "Developed responsive user interfaces with React.js for admin and agent panels. Integrated backend APIs, implemented real-time data handling, and used SWR, Tailwind CSS, and GitHub for smooth, collaborative development.",
+    "images": [
+      "/src/assets/images/screenshotUml/loginpagereact.png",
+      "/src/assets/images/screenshotUml/react_admin_page.png",
+      "/src/assets/images/screenshotUml/react_page1.png",
+      "/src/assets/images/screenshotUml/adduser.png",
+      "/src/assets/images/screenshotUml/ticketdetails.png"
+      
+    ],
+
+    "frontend": "https://github.com/emonmahmud1/UML.git",
+    "backend": "https://github.com/emonmahmud1/Demo.git"
+  },
+    {
+      "id": 2,
+      "name": "Career Hub",
+      "description": "Built Career Hub website with React.js, JavaScript, and Tailwind CSS. Incorporated DaisyUI for a user-friendly interface. Simplified job applications, ensuring a seamless user experience and engagement.",
+      "images": [
+        "/src/assets/images/careerHub/banner.png",
+        "/src/assets/images/careerHub/details.png",
+        "/src/assets/images/careerHub/list.png"
+      ],
+      "liveLink": "https://careerhubapp.netlify.app",
+      "frontend": "https://github.com/emonmahmud1/career-hub-react.git"
+    },
+    {
+      "id": 3,
+      "name": "Book Blend",
+      "description": "Developed a responsive and user-friendly book review website using React.js, JavaScript, Tailwind CSS, DaisyUI, HTML, and CSS.",
+      "images": [
+        "/src/assets/images/bookblend/bookblend1.png",
+        "/src/assets/images/bookblend/bookblend2.png",
+        "/src/assets/images/bookblend/aboutus.png",
+        "/src/assets/images/bookblend/contactus.png",
+        "/src/assets/images/bookblend/whitelist.png"
+      ],
+      "liveLink": "https://book-blend.netlify.app",
+      "frontend": "https://github.com/emonmahmud1/book-blend.git"
+    },
+    {
+      "id": 4,
+      "name": "Click to Buy",
+      "description": "Developed using React, Redux, Tailwind CSS, and JavaScript. This responsive e-commerce site lets users add products to cart, adjust quantity, and view automatic price updates.",
+      "images": [
+        "/src/assets/images/clickToBuy/homepage.png",
+        "/src/assets/images/clickToBuy/cartpage.png",
+        "/src/assets/images/clickToBuy/orderDialogue.png"
+      ],
+      "liveLink": "https://oneclicktobuy.netlify.app/",
+      "frontend": "https://github.com/emonmahmud1/oneclickbuy.git"
+    },
+    {
+      "id": 5,
+      "name": "Janata WiFi CRUD App",
+      "description": "Full-stack CRUD web app using React.js, Node.js, Express, and MongoDB. Visualizes stock data in a table with editable rows and includes multi-axis charts. Supports switching between JSON and MongoDB models.",
+      "images": [
+        "/src/assets/images/tradeapp/screen1.png",
+        "/src/assets/images/tradeapp/screen2.png",
+        "/src/assets/images/tradeapp/screen3.png"
+      ],
+      "liveLink": "https://tradeappjanata.netlify.app/",
+      "backend": "https://github.com/emonmahmud1/janata_crud_backend.git",
+      "frontend": "https://github.com/emonmahmud1/janata_crud_frontend.git"
+    }
+  ]
+  
