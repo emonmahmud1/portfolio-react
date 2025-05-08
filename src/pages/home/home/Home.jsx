@@ -1,5 +1,5 @@
 import React from "react";
-import profile from "/public/profilePic.png"
+import profile from "/profilePic.png"
 import Projects from "../projects/Projects";
 
 const Home = () => {

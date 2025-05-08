@@ -7,7 +7,7 @@ const Projects = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("../../../../public/projectsData.json");
+        const res = await fetch("/projectsData.json");
         const data = await res.json();
         setData(data);
       } catch (err) {
