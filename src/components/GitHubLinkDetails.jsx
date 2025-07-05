@@ -19,7 +19,7 @@ const GitHubLinkDetails = ({ frontend, backend }) => {
           <div className="flex justify-between space-x-4">
             {frontend && (
               <a
-                href="https://github.com/yourname/qwik-bistro"
+                href={frontend}
                 target="_blank"
                 className="text-green-600 hover:underline text-sm"
               >
@@ -28,7 +28,7 @@ const GitHubLinkDetails = ({ frontend, backend }) => {
             )}
             {backend && (
               <a
-                href="https://github.com/yourname/qwik-bistro"
+                href={backend}
                 target="_blank"
                 className="text-blue-600 hover:underline text-sm"
               >

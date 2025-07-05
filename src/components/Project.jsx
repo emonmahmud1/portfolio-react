@@ -3,6 +3,7 @@ import ImageCarousel from '../../src/components/ImageCarousel'
 import GitHubLinkDetails from "./GitHubLinkDetails";
 
 const Project = ({ data }) => {
+  console.log(data?.frontend);
   return (
     <>
       {/* Project Card */}
