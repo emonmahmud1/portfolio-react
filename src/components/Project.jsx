@@ -13,7 +13,7 @@ const Project = ({ data }) => {
           }
         </div>
 
-        <div className="md:px-4 mt-4 z-100">
+        <div className="px-4 mt-4 z-100">
           <h2 className="text-xl font-semibold mb-2">{data?.name}</h2>
           <p className="text-gray-600 text-sm mb-4">
             {data?.description}
