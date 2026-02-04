@@ -1,8 +1,10 @@
-import { FaFigma, FaGitAlt, FaHtml5, FaLaravel, FaNodeJs, FaReact } from "react-icons/fa6";
-import { SiExpress, SiFirebase, SiJavascript, SiMongodb, SiNextdotjs, SiPostman, SiRedux, SiTailwindcss } from 'react-icons/si';
+import { FaFigma, FaGitAlt, FaHtml5, FaLaravel, FaNodeJs, FaReact, FaPython } from "react-icons/fa6";
+import { SiExpress, SiFirebase, SiJavascript, SiMongodb, SiNextdotjs, SiPostman, SiRedux, SiTailwindcss, SiSelenium, SiJest, SiCypress, SiNumpy, SiPandas, SiPytest } from 'react-icons/si';
 import { RiPhpLine } from "react-icons/ri";
+import { TbTestPipe } from "react-icons/tb";
 
 const skillSets = [
+  // Development Skills
   {
     title: "React.js",
     icon: <FaReact className="text-blue-500" />,
@@ -14,12 +16,6 @@ const skillSets = [
     icon: <SiNextdotjs className="text-gray-300" />,
     description:
       "Full-stack React framework with SSR, routing, and API routes for modern web apps.",
-  },
-  {
-    title: "Tailwind CSS",
-    icon: <SiTailwindcss className="text-teal-400 " />,
-    description:
-      "Utility-first CSS framework to build fully responsive and custom UIs efficiently.",
   },
   {
     title: "Node.js",
@@ -40,6 +36,52 @@ const skillSets = [
       "Flexible NoSQL database used to store and query JSON-like documents.",
   },
   {
+    title: "Python",
+    icon: <FaPython className="text-blue-600" />,
+    description:
+      "Versatile programming language for automation, testing, and data analysis.",
+  },
+  {
+    title: "Numpy & Pandas",
+    icon: <SiPandas className="text-blue-700" />,
+    description:
+      "Python libraries for data manipulation, analysis, and numerical computing.",
+  },
+  
+  // Testing & QA Skills
+  {
+    title: "Selenium",
+    icon: <SiSelenium className="text-green-600" />,
+    description:
+      "Automated testing framework for web applications across multiple browsers.",
+  },
+  {
+    title: "Pytest",
+    icon: <SiPytest className="text-blue-500" />,
+    description:
+      "Python testing framework for writing simple and scalable test cases.",
+  },
+  {
+    title: "Jest",
+    icon: <SiJest className="text-red-600" />,
+    description:
+      "JavaScript testing framework with focus on simplicity and performance.",
+  },
+  {
+    title: "Cypress",
+    icon: <SiCypress className="text-gray-700" />,
+    description:
+      "Modern end-to-end testing framework for web applications.",
+  },
+  {
+    title: "Postman",
+    icon: <SiPostman className="text-orange-600" />,
+    description:
+      "API testing tool for debugging, documenting, and managing REST APIs.",
+  },
+  
+  // Other Skills
+  {
     title: "PHP",
     icon: <RiPhpLine className="text-indigo-600" />,
     description:
@@ -58,6 +100,12 @@ const skillSets = [
       "Core web language enabling dynamic, interactive functionality in browsers.",
   },
   {
+    title: "Tailwind CSS",
+    icon: <SiTailwindcss className="text-teal-400 " />,
+    description:
+      "Utility-first CSS framework to build fully responsive and custom UIs efficiently.",
+  },
+  {
     title: "Git & GitHub",
     icon: <FaGitAlt className="text-orange-500" />,
     description:
@@ -74,12 +122,6 @@ const skillSets = [
     icon: <SiRedux className="text-purple-500" />,
     description:
       "Centralized state management for predictable React application behavior.",
-  },
-  {
-    title: "Postman",
-    icon: <SiPostman className="text-orange-600" />,
-    description:
-      "API testing tool for debugging, documenting, and managing REST APIs.",
   },
   {
     title: "HTML & CSS",
