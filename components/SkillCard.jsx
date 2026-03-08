@@ -1,4 +1,4 @@
-const SkillCard = ({ logo, cardTitle, CardText }) => {
+export default function SkillCard({ logo, cardTitle, CardText }) {
   return (
     <div className="group relative bg-gray-50 border border-gray-200 rounded-xl p-6 hover:border-gray-900 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
       <div className="text-4xl mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -11,7 +11,5 @@ const SkillCard = ({ logo, cardTitle, CardText }) => {
         {CardText}
       </p>
     </div>
-  );
-};
-
-export default SkillCard;
+  )
+}

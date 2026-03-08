@@ -1,6 +1,6 @@
-import { FaGithub, FaFacebook, FaLinkedin } from "react-icons/fa";
+import { FaGithub, FaFacebook, FaLinkedin } from 'react-icons/fa'
 
-const SocialMedia = () => {
+export default function SocialMedia() {
   return (
     <div className="flex gap-4">
       <a
@@ -36,7 +36,5 @@ const SocialMedia = () => {
         <div className="absolute inset-0 bg-white rounded-xl opacity-0 group-hover:opacity-10 blur transition-opacity"></div>
       </a>
     </div>
-  );
-};
-
-export default SocialMedia;
+  )
+}

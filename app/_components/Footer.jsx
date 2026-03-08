@@ -1,35 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
-import SocialMedia from './SocialMedia';
+'use client'
 
-const Footer = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const footerRef = useRef(null);
+import { useState, useEffect, useRef } from 'react'
+import SocialMedia from '@/components/SocialMedia'
+
+export default function Footer() {
+  const [isVisible, setIsVisible] = useState(false)
+  const footerRef = useRef(null)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setIsVisible(true);
+            setIsVisible(true)
           }
-        });
+        })
       },
       { threshold: 0.2 }
-    );
+    )
 
     if (footerRef.current) {
-      observer.observe(footerRef.current);
+      observer.observe(footerRef.current)
     }
 
     return () => {
       if (footerRef.current) {
-        observer.unobserve(footerRef.current);
+        observer.unobserve(footerRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
   return (
-    <footer ref={footerRef} className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-16 sm:mt-24 overflow-hidden">
+    <footer ref={footerRef} id="contact" className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-16 sm:mt-24 overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-1/4 w-64 h-64 sm:w-96 sm:h-96 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -91,7 +93,7 @@ const Footer = () => {
         }`}>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-xs sm:text-sm text-center md:text-left">
-              © 2025 Emon Mahmud. All rights reserved.
+             2026 Emon Mahmud. All rights reserved.
             </p>
             <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-400 flex-wrap justify-center">
               <a href="#home" className="hover:text-white transition-colors">Home</a>
@@ -107,7 +109,5 @@ const Footer = () => {
       {/* Decorative bottom accent */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800"></div>
     </footer>
-  );
-};
-
-export default Footer;
+  )
+}

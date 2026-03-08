@@ -1,7 +1,7 @@
-import ImageCarousel from '../../src/components/ImageCarousel'
-import GitHubLinkDetails from "./GitHubLinkDetails";
+import ImageCarousel from './ImageCarousel'
+import GitHubLinkDetails from './GitHubLinkDetails'
 
-const Project = ({ data }) => {
+export default function Project({ data }) {
   return (
     <div className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-gray-900 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
       <div className="h-56 overflow-hidden">
@@ -51,7 +51,5 @@ const Project = ({ data }) => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default Project;
+  )
+}

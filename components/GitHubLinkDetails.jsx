@@ -1,14 +1,12 @@
-import React from "react";
-import { Github } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { Github } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card";
+} from '@/components/ui/hover-card'
 
-const GitHubLinkDetails = ({ frontend, backend }) => {
+export default function GitHubLinkDetails({ frontend, backend }) {
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -57,7 +55,5 @@ const GitHubLinkDetails = ({ frontend, backend }) => {
         </div>
       </HoverCardContent>
     </HoverCard>
-  );
-};
-
-export default GitHubLinkDetails;
+  )
+}

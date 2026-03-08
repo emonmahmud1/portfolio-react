@@ -1,29 +1,26 @@
-import { useState } from "react";
-import profile from "/profile.jpg";
-import Projects from "../projects/Projects";
-import MySkills from "../../MySkills/MySkills";
-import SocialMedia from "../../../components/SocialMedia";
-import Footer from "../../../components/Footer";
-import ScrollToTop from "../../../components/ScrollToTop";
-import Navigation from "../../../components/Navigation";
+'use client'
 
-const Home = () => {
-  const [showCVMenu, setShowCVMenu] = useState(false);
+import { useState } from 'react'
+import Image from 'next/image'
+import SocialMedia from '@/components/SocialMedia'
+import MySkills from '@/features/skills/_components/MySkills'
+import Projects from '@/features/projects/_components/Projects'
+
+export default function Home() {
+  const [showCVMenu, setShowCVMenu] = useState(false)
 
   const cvOptions = [
-    { label: "Developer CV", file: "/cv/Emon_Mahmud.pdf" },
-    { label: "SQA Engineer CV", file: "/cv/Emon_Mahmud_sqa.pdf" },
-  ];
+    { label: 'Developer CV', file: '/cv/Emon_Mahmud.pdf' },
+    { label: 'SQA Engineer CV', file: '/cv/Emon_Mahmud_sqa.pdf' },
+  ]
 
   const handleCVDownload = (file) => {
-    window.open(file, '_blank');
-    setShowCVMenu(false);
-  };
+    window.open(file, '_blank')
+    setShowCVMenu(false)
+  }
 
   return (
     <div className="w-full min-h-screen bg-white">
-      <Navigation />
-      
       {/* Hero Section */}
       <div id="home" className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
@@ -31,7 +28,6 @@ const Home = () => {
             {/* Text Content */}
             <div className="flex-1 space-y-6 sm:space-y-8 text-center lg:text-left w-full">
               <div className="space-y-4 sm:space-y-6">
-                
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
                   Full-Stack Developer
                   <span className="block text-gray-700 mt-2">& SQA Engineer</span>
@@ -96,10 +92,13 @@ const Home = () => {
             {/* Image */}
             <div className="flex-shrink-0 w-full sm:w-auto flex justify-center">
               <div className="w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-2xl overflow-hidden shadow-lg">
-                <img
-                  src={profile}
+                <Image
+                  src="/profile.jpg"
                   alt="Profile"
+                  width={320}
+                  height={320}
                   className="w-full h-full object-cover"
+                  priority
                 />
               </div>
             </div>
@@ -116,14 +115,6 @@ const Home = () => {
           <Projects />
         </div>
       </div>
-      
-      <div id="contact">
-        <Footer />
-      </div>
-      
-      <ScrollToTop />
     </div>
-  );
-};
-
-export default Home;
+  )
+}

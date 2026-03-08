@@ -1,12 +1,87 @@
-# React + Vite
+# Portfolio - Next.js
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Full-Stack Developer & SQA Engineer Portfolio built with Next.js 15, Tailwind CSS, and Shadcn UI.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework:** Next.js 15 (App Router)
+- **Styling:** Tailwind CSS 4
+- **UI Components:** Shadcn UI (Radix UI)
+- **Icons:** React Icons, Lucide React
+- **Carousel:** Embla Carousel
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+portfolio-nextjs/
+├── app/
+│   ├── layout.js              # Root layout with Navigation & Footer
+│   ├── page.js                # Home page with hero section
+│   ├── globals.css            # Global styles
+│   └── _components/           # App-level components
+│       ├── Navigation.jsx
+│       ├── Footer.jsx
+│       └── ScrollToTop.jsx
+├── components/                # Shared components
+│   ├── ui/                    # Shadcn UI components
+│   ├── SocialMedia.jsx
+│   ├── Title.jsx
+│   ├── SkillCard.jsx
+│   ├── Project.jsx
+│   ├── ImageCarousel.jsx
+│   └── GitHubLinkDetails.jsx
+├── features/                  # Feature-based organization
+│   ├── skills/
+│   │   └── _components/
+│   │       └── MySkills.jsx
+│   └── projects/
+│       └── _components/
+│           └── Projects.jsx
+├── data/                      # Data files
+│   └── skillSets.jsx
+├── lib/                       # Utilities
+│   └── utils.js
+└── public/                    # Static assets
+    ├── images/
+    ├── cv/
+    └── projectsData.json
+```
+
+## Getting Started
+
+### Development
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+### Build
+
+```bash
+npm run build
+npm start
+```
+
+## Features
+
+- ✅ Server-side rendering (SSR)
+- ✅ Responsive design
+- ✅ Smooth scroll animations
+- ✅ Image carousel
+- ✅ CV download options
+- ✅ Project showcase
+- ✅ Skills section with animations
+- ✅ Contact section
+- ✅ SEO optimized
+
+## Deployment
+
+Deploy easily on Vercel:
+
+```bash
+vercel
+```
+
+Or push to GitHub and connect to Vercel for automatic deployments.
