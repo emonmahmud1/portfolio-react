@@ -4,10 +4,36 @@ import { useState, useEffect, useRef } from 'react'
 import Title from '@/components/Title'
 import SkillCard from '@/features/skills/_components/SkillCard'
 import { skillSets } from '@/data/skillSets'
+import { renderIcon } from '@/data/iconMap'
 
 export default function MySkills() {
+  const [skills, setSkills] = useState([])
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef(null)
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const res = await fetch('/api/skills')
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) {
+          // DB skills: { title, description, iconName, iconColor }
+          setSkills(data.map(s => ({
+            _id: s._id,
+            title: s.title,
+            description: s.description,
+            icon: renderIcon(s.iconName, s.iconColor),
+          })))
+        } else {
+          // Fallback to hardcoded skillSets
+          setSkills(skillSets.map((s, i) => ({ _id: i, title: s.title, description: s.description, icon: s.icon })))
+        }
+      } catch {
+        setSkills(skillSets.map((s, i) => ({ _id: i, title: s.title, description: s.description, icon: s.icon })))
+      }
+    }
+    fetchSkills()
+  }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -65,11 +91,11 @@ export default function MySkills() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 px-4">
-        {skillSets?.map((skill, index) => {
+        {skills?.map((skill, index) => {
           const direction = getDirection(index)
           return (
             <div
-              key={index}
+              key={skill._id}
               className={`transition-all duration-700 ease-out ${
                 isVisible 
                   ? 'translate-x-0 translate-y-0 opacity-100' 

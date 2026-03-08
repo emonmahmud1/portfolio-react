@@ -1,18 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import SocialMedia from '@/components/SocialMedia'
 import MySkills from '@/features/skills/MySkills'
 import Projects from '@/features/projects/Projects'
 
-export default function Home() {
-  const [showCVMenu, setShowCVMenu] = useState(false)
-
-  const cvOptions = [
+const DEFAULT_HERO = {
+  title: 'Full-Stack Developer',
+  subtitle: '& SQA Engineer',
+  description: 'Building modern web applications with clean code and ensuring quality through comprehensive testing. Skilled in development, automation, and quality assurance.',
+  cvOptions: [
     { label: 'Developer CV', file: '/cv/Emon_Mahmud.pdf' },
     { label: 'SQA Engineer CV', file: '/cv/Emon_Mahmud_sqa.pdf' },
-  ]
+  ],
+}
+
+export default function Home() {
+  const [showCVMenu, setShowCVMenu] = useState(false)
+  const [hero, setHero] = useState(DEFAULT_HERO)
+
+  useEffect(() => {
+    fetch('/api/hero')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.title) {
+          setHero({
+            title: data.title || DEFAULT_HERO.title,
+            subtitle: data.subtitle || DEFAULT_HERO.subtitle,
+            description: data.description || DEFAULT_HERO.description,
+            cvOptions: (data.cvOptions && data.cvOptions.length > 0) ? data.cvOptions : DEFAULT_HERO.cvOptions,
+          })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleCVDownload = (file) => {
     window.open(file, '_blank')
@@ -29,13 +51,12 @@ export default function Home() {
             <div className="flex-1 space-y-6 sm:space-y-8 text-center lg:text-left w-full">
               <div className="space-y-4 sm:space-y-6">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                  Full-Stack Developer
-                  <span className="block text-gray-700 mt-2">& SQA Engineer</span>
+                  {hero.title}
+                  <span className="block text-gray-700 mt-2">{hero.subtitle}</span>
                 </h1>
                 
                 <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  Building modern web applications with clean code and ensuring quality through comprehensive testing. 
-                  Skilled in development, automation, and quality assurance.
+                  {hero.description}
                 </p>
               </div>
 
@@ -67,7 +88,7 @@ export default function Home() {
                   {/* Dropdown Menu */}
                   {showCVMenu && (
                     <div className="absolute top-full mt-2 w-full sm:w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                      {cvOptions.map((cv, index) => (
+                      {hero.cvOptions.map((cv, index) => (
                         <button
                           key={index}
                           onClick={() => handleCVDownload(cv.file)}
