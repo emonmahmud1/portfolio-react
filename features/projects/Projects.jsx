@@ -12,9 +12,16 @@ export default function Projects() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/projectsData.json')
+        const res = await fetch('/api/projects')
         const data = await res.json()
-        setData(data)
+        if (Array.isArray(data) && data.length > 0) {
+          setData(data)
+        } else {
+          // Fallback to static JSON if DB is empty
+          const fallback = await fetch('/projectsData.json')
+          const fallbackData = await fallback.json()
+          setData(fallbackData)
+        }
       } catch (err) {
         console.log(err)
       }
@@ -71,7 +78,7 @@ export default function Projects() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {data && data.map((project, index) => (
             <div
-              key={project.id}
+              key={project._id || project.id}
               className={`transition-all duration-700 ease-out ${
                 isVisible 
                   ? 'translate-y-0 opacity-100 scale-100 rotate-0' 
