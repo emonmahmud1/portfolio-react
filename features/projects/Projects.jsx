@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Title from '@/components/Title'
-import Project from '@/components/Project'
+import Project from './_components/Project'
 
 export default function Projects() {
   const [data, setData] = useState([])

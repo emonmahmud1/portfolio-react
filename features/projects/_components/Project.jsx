@@ -1,5 +1,5 @@
-import ImageCarousel from './ImageCarousel'
 import GitHubLinkDetails from './GitHubLinkDetails'
+import ImageCarousel from './ImageCarousel'
 
 export default function Project({ data }) {
   return (

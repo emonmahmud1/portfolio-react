@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Title from '@/components/Title'
-import SkillCard from '@/components/SkillCard'
+import SkillCard from '@/features/skills/_components/SkillCard'
 import { skillSets } from '@/data/skillSets'
 
 export default function MySkills() {

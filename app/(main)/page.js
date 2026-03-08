@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import SocialMedia from '@/components/SocialMedia'
-import MySkills from '@/features/skills/_components/MySkills'
-import Projects from '@/features/projects/_components/Projects'
+import MySkills from '@/features/skills/MySkills'
+import Projects from '@/features/projects/Projects'
 
 export default function Home() {
   const [showCVMenu, setShowCVMenu] = useState(false)
