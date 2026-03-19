@@ -11,19 +11,19 @@ function verifyAuth(req) {
 }
 
 export default async function handler(req, res) {
-  if (!verifyAuth(req)) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
-
   try {
     if (req.method === 'GET') {
       const files = await getCVFiles()
       return res.status(200).json(files)
     }
 
+    if (!verifyAuth(req)) {
+      return res.status(401).json({ error: 'Please login to perform this action' })
+    }
+
     if (req.method === 'DELETE') {
       const { id } = req.body
-      if (!id) return res.status(400).json({ error: 'Missing id' })
+      if (!id) return res.status(400).json({ error: 'Missing CV ID' })
 
       const cv = await getCVById(id)
 
@@ -51,11 +51,12 @@ export default async function handler(req, res) {
         }
       }
 
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ success: true, message: 'CV deleted successfully' })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
-    return res.status(500).json({ error: 'Server error' })
+    console.error('CV sync delete error:', error)
+    return res.status(500).json({ error: 'Internal server error: ' + error.message })
   }
 }

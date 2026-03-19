@@ -15,27 +15,28 @@ export default async function handler(req, res) {
     }
 
     if (!verifyAuth(req)) {
-      return res.status(401).json({ error: 'Unauthorized' })
+      return res.status(401).json({ error: 'Please login to perform this action' })
     }
 
     if (req.method === 'POST') {
       const id = await createProject(req.body)
-      return res.status(201).json({ success: true, id })
+      return res.status(201).json({ success: true, message: 'Project created successfully', id })
     }
 
     if (req.method === 'PUT') {
       const { _id, ...data } = req.body
       await updateProject(_id, data)
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ success: true, message: 'Project updated successfully' })
     }
 
     if (req.method === 'DELETE') {
       await deleteProject(req.body.id)
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ success: true, message: 'Project deleted successfully' })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
-    return res.status(500).json({ error: 'Server error' })
+    console.error('Projects API error:', error)
+    return res.status(500).json({ error: 'Internal server error: ' + error.message })
   }
 }

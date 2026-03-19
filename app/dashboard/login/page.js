@@ -3,32 +3,38 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Lock } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
     setLoading(true)
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    setLoading(false)
+      const data = await res.json()
+      setLoading(false)
 
-    if (res.ok) {
-      router.push('/dashboard')
-    } else {
-      setError('Invalid email or password')
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Login successful')
+        router.push('/dashboard')
+      } else {
+        toast.error(data.error || 'Invalid credentials')
+      }
+    } catch {
+      setLoading(false)
+      toast.error('Network error during login')
     }
   }
 
@@ -80,12 +86,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <span className="text-red-600 text-sm">{error}</span>
-              </div>
-            )}
 
             <button
               type="submit"

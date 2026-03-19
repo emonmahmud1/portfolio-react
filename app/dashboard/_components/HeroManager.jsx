@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, Save, FileText } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function HeroManager() {
   const [form, setForm] = useState({
@@ -11,7 +12,6 @@ export default function HeroManager() {
     cvOptions: [],
   })
   const [loading, setLoading] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [newCV, setNewCV] = useState({ label: '', file: '' })
   const [fetching, setFetching] = useState(true)
 
@@ -29,32 +29,46 @@ export default function HeroManager() {
         }
         setFetching(false)
       })
-      .catch(() => setFetching(false))
+      .catch(() => {
+        toast.error('Failed to load hero data')
+        setFetching(false)
+      })
   }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setSaved(false)
-    await fetch('/api/hero', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    setLoading(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    
+    try {
+      const res = await fetch('/api/hero', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        toast.success(data.message)
+      } else {
+        toast.error(data.error || 'Update failed')
+      }
+    } catch {
+      toast.error('Connection error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const addCVOption = () => {
     if (newCV.label.trim() && newCV.file.trim()) {
       setForm({ ...form, cvOptions: [...form.cvOptions, { label: newCV.label.trim(), file: newCV.file.trim() }] })
       setNewCV({ label: '', file: '' })
+      toast.info('CV option added to list')
     }
   }
 
   const removeCVOption = (index) => {
     setForm({ ...form, cvOptions: form.cvOptions.filter((_, i) => i !== index) })
+    toast.info('CV option removed')
   }
 
   if (fetching) {
@@ -185,7 +199,7 @@ export default function HeroManager() {
           className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          {loading ? 'Saving...' : saved ? 'Saved!' : 'Save Hero Section'}
+          {loading ? 'Saving...' : 'Save Hero Section'}
         </button>
       </form>
     </div>
