@@ -1,6 +1,7 @@
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import { verifyToken } from '@/lib/auth'
 import { saveImage } from '@/lib/services/images'
 import { v2 as cloudinary } from 'cloudinary'
@@ -11,8 +12,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-const uploadDir = path.join(process.cwd(), 'public', 'images', 'uploads')
-if (!fs.existsSync(uploadDir)) {
+const isProduction = process.env.NODE_ENV === 'production'
+const uploadDir = isProduction ? os.tmpdir() : path.join(process.cwd(), 'public', 'images', 'uploads')
+
+if (!isProduction && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true })
 }
 
@@ -101,10 +104,10 @@ export default async function handler(req, res) {
         })
       })
     )
-    return res.status(200).json({ success: true, files: saved })
+    return res.status(200).json({ success: true, message: `${saved.length} image(s) uploaded successfully`, files: saved })
   } catch (err) {
     console.error('Image save error:', err)
-    return res.status(500).json({ error: 'Failed to save image metadata' })
+    return res.status(500).json({ error: 'Failed to save image metadata: ' + err.message })
   }
 }
 
