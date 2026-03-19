@@ -3,6 +3,13 @@ import path from 'path'
 import fs from 'fs'
 import { verifyToken } from '@/lib/auth'
 import { saveImage } from '@/lib/services/images'
+import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 const uploadDir = path.join(process.cwd(), 'public', 'images', 'uploads')
 if (!fs.existsSync(uploadDir)) {
@@ -65,16 +72,34 @@ export default async function handler(req, res) {
 
   try {
     const saved = await Promise.all(
-      req.files.map((file) =>
-        saveImage({
+      req.files.map(async (file) => {
+        let resultPath = `/images/uploads/${file.filename}`
+        let thumbnailUrl = ''
+
+        // Cloudinary Upload if credentials exist
+        if (process.env.CLOUDINARY_CLOUD_NAME) {
+          try {
+            const uploadResult = await cloudinary.uploader.upload(file.path, {
+              folder: 'portfolio/projects',
+            })
+            resultPath = uploadResult.secure_url
+            // Optional: delete from local after upload
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+          } catch (err) {
+            console.error('Cloudinary upload error:', err)
+            // Continue with local path if Cloudinary fails
+          }
+        }
+
+        return await saveImage({
           originalName: file.originalname,
           filename: file.filename,
-          path: `/images/uploads/${file.filename}`,
+          path: resultPath,
           size: file.size,
           mimetype: file.mimetype,
           alt: file.originalname.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
         })
-      )
+      })
     )
     return res.status(200).json({ success: true, files: saved })
   } catch (err) {

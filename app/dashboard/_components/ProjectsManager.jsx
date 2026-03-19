@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Trash2, Edit, Plus, X, Save, Globe, Github, ImageIcon } from 'lucide-react'
+import { Trash2, Edit, Plus, X, Save, Globe, Github, ImageIcon, GripVertical, Loader2, UploadCloud } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 const EMPTY_FORM = { name: '', description: '', liveLink: '', frontend: '', backend: '', images: [], techStack: [] }
 
@@ -20,6 +21,50 @@ export default function ProjectsManager() {
     const res = await fetch('/api/projects')
     const data = await res.json()
     setProjects(Array.isArray(data) ? data : [])
+  }
+
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return
+    const items = Array.from(projects)
+    const [reorderedItem] = items.splice(result.source.index, 1)
+    items.splice(result.destination.index, 0, reorderedItem)
+    setProjects(items)
+
+    // Save order to server
+    try {
+      await fetch('/api/projects/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: items.map(p => p._id) }),
+      })
+    } catch {
+      console.error('Failed to save order')
+    }
+  }
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files)
+    if (!files || files.length === 0) return
+    setLoading(true)
+
+    const formData = new FormData()
+    files.forEach(f => formData.append('files', f))
+    
+    try {
+      const res = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (data.success && data.files) {
+        const newImages = data.files.map(f => f.path)
+        setForm(prev => ({ ...prev, images: [...prev.images, ...newImages] }))
+      }
+    } catch (err) {
+      console.error('Upload failed', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -108,7 +153,7 @@ export default function ProjectsManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
-          <p className="text-gray-500 text-sm mt-1">{projects.length} project{projects.length !== 1 ? 's' : ''} in your portfolio</p>
+          <p className="text-gray-500 text-sm mt-1">{projects.length} project{projects.length !== 1 ? 's' : ''} (Drag cards to sort order)</p>
         </div>
         {!showForm && (
           <button
@@ -226,39 +271,69 @@ export default function ProjectsManager() {
 
             {/* Images */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Project Images (URLs or /public paths)</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="/images/project/screenshot.png or https://..."
-                  value={imageInput}
-                  onChange={(e) => setImageInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                />
-                <button
-                  type="button"
-                  onClick={addImage}
-                  disabled={!imageInput.trim()}
-                  className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors disabled:opacity-40"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Place images in <code className="bg-gray-100 px-1 rounded">/public</code>. Press Enter or + to add.</p>
-
-              {form.images.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {form.images.map((img, index) => (
-                    <div key={index} className="flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 bg-gray-100 border border-gray-200 rounded-lg text-xs text-gray-700">
-                      <span className="max-w-[180px] truncate">{img}</span>
-                      <button type="button" onClick={() => removeImage(index)} className="text-gray-400 hover:text-red-500 transition-colors rounded p-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Project Images</label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Upload Section */}
+                <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors group">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={loading}
+                  />
+                  <div className="flex flex-col items-center">
+                    {loading ? (
+                      <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-8 h-8 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    )}
+                    <p className="mt-2 text-sm font-medium text-gray-700">Click or drag to upload</p>
+                    <p className="text-xs text-gray-500 mt-1">Multiple images allowed</p>
+                  </div>
                 </div>
-              )}
+
+                {/* Manual URL Input */}
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Or enter image URL manualy..."
+                      value={imageInput}
+                      onChange={(e) => setImageInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={addImage}
+                      disabled={!imageInput.trim()}
+                      className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors disabled:opacity-40"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {form.images.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 max-h-[140px] overflow-y-auto pr-1">
+                      {form.images.map((img, index) => (
+                        <div key={index} className="relative aspect-video bg-gray-100 border border-gray-200 rounded-lg overflow-hidden group/img">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 p-1 bg-white/90 shadow-sm text-red-500 rounded opacity-0 group-hover/img:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3 pt-2 border-t border-gray-100">
@@ -288,56 +363,68 @@ export default function ProjectsManager() {
           <p className="text-gray-400 text-sm mt-1">Click &quot;Add Project&quot; to get started</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {projects.map((project) => (
-            <div key={project._id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-gray-300 transition-colors shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed">{project.description}</p>
-                  <div className="flex flex-wrap items-center gap-3 mt-3">
-                    {project.liveLink && (
-                      <a href={project.liveLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                        <Globe className="w-3 h-3" /> Live
-                      </a>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="projects">
+            {(provided) => (
+              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
+                {projects.map((project, index) => (
+                  <Draggable key={project._id} draggableId={project._id} index={index}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 p-5">
+                          {/* Drag Handle */}
+                          <div {...provided.dragHandleProps} className="p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 transition-colors">
+                            <GripVertical className="w-5 h-5" />
+                          </div>
+
+                          <div className="flex-1 min-w-0 flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
+                              <p className="text-sm text-gray-500 mt-1 line-clamp-1 leading-relaxed">{project.description}</p>
+                              <div className="flex flex-wrap items-center gap-3 mt-3">
+                                {project.liveLink && (
+                                  <a href={project.liveLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <Globe className="w-3 h-3" /> Live
+                                  </a>
+                                )}
+                                {project.images?.length > 0 && (
+                                  <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                                    <ImageIcon className="w-3 h-3" /> {project.images.length} image{project.images.length > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 flex-shrink-0">
+                              <button
+                                onClick={() => handleEdit(project)}
+                                className="p-2 border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(project._id)}
+                                className="p-2 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                    {project.frontend && (
-                      <a href={project.frontend} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:underline">
-                        <Github className="w-3 h-3" /> Frontend
-                      </a>
-                    )}
-                    {project.backend && (
-                      <a href={project.backend} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-gray-500 hover:underline">
-                        <Github className="w-3 h-3" /> Backend
-                      </a>
-                    )}
-                    {project.images?.length > 0 && (
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-                        <ImageIcon className="w-3 h-3" /> {project.images.length} image{project.images.length > 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleEdit(project)}
-                    className="p-2 border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(project._id)}
-                    className="p-2 border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
     </div>
   )

@@ -4,6 +4,13 @@ import fs from 'fs'
 import { verifyToken } from '@/lib/auth'
 import { saveCVFile } from '@/lib/services/cv'
 import { getHero, updateHero } from '@/lib/services/hero'
+import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 // Ensure upload directory exists
 const uploadDir = path.join(process.cwd(), 'public', 'cv')
@@ -61,7 +68,23 @@ export default async function handler(req, res) {
     const rawLabel = req.body?.label || path.basename(req.file.originalname, ext)
     // Sanitize label — strip HTML/script injection
     const label = rawLabel.replace(/<[^>]*>/g, '').trim().slice(0, 100)
-    const filePath = '/cv/' + req.file.filename
+    
+    let filePath = '/cv/' + req.file.filename
+
+    // Cloudinary Upload if credentials exist
+    if (process.env.CLOUDINARY_CLOUD_NAME) {
+      try {
+        const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'portfolio/cv',
+          resource_type: 'raw',
+        })
+        filePath = uploadResult.secure_url
+        // Optional: delete from local after upload
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
+      } catch (err) {
+        console.error('Cloudinary CV upload error:', err)
+      }
+    }
 
     // Save metadata to MongoDB
     const id = await saveCVFile({

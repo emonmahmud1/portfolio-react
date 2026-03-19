@@ -28,11 +28,13 @@ export default async function handler(req, res) {
       const cv = await getCVById(id)
 
       if (cv) {
-        // Secure delete: use only the stored filename with path.basename to prevent traversal
-        const safeName = path.basename(cv.filename)
-        const filePath = path.join(process.cwd(), 'public', 'cv', safeName)
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath)
+        // Only attempt local delete if it's a relative path
+        if (cv.path.startsWith('/cv/') && !cv.path.startsWith('http')) {
+          const safeName = path.basename(cv.filename)
+          const filePath = path.join(process.cwd(), 'public', 'cv', safeName)
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath)
+          }
         }
 
         await deleteCVFile(id)
