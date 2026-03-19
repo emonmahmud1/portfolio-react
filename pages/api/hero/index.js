@@ -15,17 +15,17 @@ export default async function handler(req, res) {
     }
 
     if (!verifyAuth(req)) {
-      return res.status(401).json({ error: 'Unauthorized' })
+      return res.status(401).json({ error: 'Please login to perform this action' })
     }
 
     if (req.method === 'PUT') {
       await updateHero(req.body)
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ success: true, message: 'Hero section updated successfully' })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
     console.error('API Error /api/hero:', error)
-    return res.status(500).json({ error: 'Server error', details: error.message })
+    return res.status(500).json({ error: 'Internal server error: ' + error.message })
   }
 }
