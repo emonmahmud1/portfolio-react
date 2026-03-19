@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Upload, Trash2, Copy, Check, ImageIcon, X, Loader2, FolderOpen } from 'lucide-react'
+import { toast } from 'sonner'
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`
@@ -15,7 +16,6 @@ export default function ImagesManager() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [dragOver, setDragOver] = useState(false)
-  const [statusMsg, setStatusMsg] = useState(null) // { type: 'success'|'error', text }
   const [copiedId, setCopiedId] = useState(null)
   const [pendingFiles, setPendingFiles] = useState([]) // preview before upload
   const fileInputRef = useRef(null)
@@ -25,7 +25,7 @@ export default function ImagesManager() {
       const res = await fetch('/api/images')
       if (res.ok) setImages(await res.json())
     } catch {
-      setStatusMsg({ type: 'error', text: 'Failed to load images' })
+      toast.error('Failed to load images')
     } finally {
       setLoading(false)
     }
@@ -33,20 +33,15 @@ export default function ImagesManager() {
 
   useEffect(() => { fetchImages() }, [fetchImages])
 
-  const showStatus = (type, text) => {
-    setStatusMsg({ type, text })
-    setTimeout(() => setStatusMsg(null), 4000)
-  }
-
   const handleFiles = (files) => {
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
     const valid = Array.from(files).filter((f) => {
       if (!allowed.includes(f.type)) {
-        showStatus('error', `${f.name}: not a supported image type`)
+        toast.error(`${f.name}: not a supported image type`)
         return false
       }
       if (f.size > 10 * 1024 * 1024) {
-        showStatus('error', `${f.name}: exceeds 10 MB limit`)
+        toast.error(`${f.name}: exceeds 10 MB limit`)
         return false
       }
       return true
@@ -59,7 +54,8 @@ export default function ImagesManager() {
       size: f.size,
       preview: URL.createObjectURL(f),
     }))
-    setPendingFiles(previews)
+    setPendingFiles(prev => [...prev, ...previews])
+    toast.info(`${previews.length} image(s) added to preview`)
   }
 
   const removePending = (idx) => {
@@ -69,7 +65,7 @@ export default function ImagesManager() {
     })
   }
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (pendingFiles.length === 0) return
     const formData = new FormData()
     pendingFiles.forEach(({ file }) => formData.append('files', file))
@@ -77,49 +73,66 @@ export default function ImagesManager() {
     setUploading(true)
     setProgress(0)
 
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', '/api/upload/image')
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
-    }
-    xhr.onload = () => {
+    try {
+      const promise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', '/api/upload/image')
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
+        }
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status === 200 && data.success) {
+              resolve(data)
+            } else {
+              reject(new Error(data.error || 'Upload failed'))
+            }
+          } catch {
+            reject(new Error('Upload failed'))
+          }
+        }
+        xhr.onerror = () => reject(new Error('Network error during upload'))
+        xhr.send(formData)
+      })
+
+      toast.promise(promise, {
+        loading: `Uploading ${pendingFiles.length} image(s)...`,
+        success: (data) => data.message || 'Images uploaded successfully!',
+        error: (err) => err.message,
+      })
+
+      await promise
+      pendingFiles.forEach(({ preview }) => URL.revokeObjectURL(preview))
+      setPendingFiles([])
+      fetchImages()
+    } catch (err) {
+      // handled by toast.promise
+    } finally {
       setUploading(false)
-      const data = JSON.parse(xhr.responseText)
-      if (xhr.status === 200 && data.success) {
-        pendingFiles.forEach(({ preview }) => URL.revokeObjectURL(preview))
-        setPendingFiles([])
-        showStatus('success', `${data.files.length} image${data.files.length > 1 ? 's' : ''} uploaded!`)
-        fetchImages()
-      } else {
-        showStatus('error', data.error || 'Upload failed')
-      }
     }
-    xhr.onerror = () => {
-      setUploading(false)
-      showStatus('error', 'Network error during upload')
-    }
-    xhr.send(formData)
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this image permanently?')) return
     try {
       const res = await fetch(`/api/images?id=${id}`, { method: 'DELETE' })
-      if (res.ok) {
+      const data = await res.json()
+      if (res.ok && data.success) {
         setImages((prev) => prev.filter((img) => img._id !== id))
-        showStatus('success', 'Image deleted')
+        toast.success(data.message || 'Image deleted')
       } else {
-        const d = await res.json()
-        showStatus('error', d.error || 'Delete failed')
+        toast.error(data.error || 'Delete failed')
       }
     } catch {
-      showStatus('error', 'Network error')
+      toast.error('Network error')
     }
   }
 
   const copyPath = (id, imgPath) => {
     navigator.clipboard.writeText(imgPath)
     setCopiedId(id)
+    toast.success('Path copied to clipboard!')
     setTimeout(() => setCopiedId(null), 2000)
   }
 
@@ -135,18 +148,6 @@ export default function ImagesManager() {
         <h2 className="text-2xl font-bold text-gray-900">Image Library</h2>
         <p className="text-gray-500 text-sm mt-1">Upload and manage images for your projects and portfolio.</p>
       </div>
-
-      {/* Status message */}
-      {statusMsg && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium ${
-          statusMsg.type === 'success'
-            ? 'bg-green-50 text-green-800 border border-green-200'
-            : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
-          {statusMsg.type === 'success' ? <Check size={16} /> : <X size={16} />}
-          {statusMsg.text}
-        </div>
-      )}
 
       {/* Upload zone */}
       <div
@@ -176,18 +177,30 @@ export default function ImagesManager() {
       {/* Pending preview */}
       {pendingFiles.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-          <p className="text-sm font-semibold text-gray-700">{pendingFiles.length} file{pendingFiles.length > 1 ? 's' : ''} ready to upload</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">{pendingFiles.length} file{pendingFiles.length > 1 ? 's' : ''} ready to upload</p>
+            {!uploading && (
+              <button 
+                onClick={() => { pendingFiles.forEach(({ preview }) => URL.revokeObjectURL(preview)); setPendingFiles([]); toast.info('Queue cleared') }}
+                className="text-xs text-red-500 hover:underline"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
             {pendingFiles.map((pf, idx) => (
               <div key={idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
                 <img src={pf.preview} alt={pf.name} className="w-full h-24 object-cover" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); removePending(idx) }}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={12} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate">
+                {!uploading && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removePending(idx) }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] p-1 truncate">
                   {formatBytes(pf.size)}
                 </div>
               </div>
@@ -218,13 +231,14 @@ export default function ImagesManager() {
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {uploading ? 'Uploading…' : 'Upload Now'}
             </button>
-            <button
-              onClick={() => { pendingFiles.forEach(({ preview }) => URL.revokeObjectURL(preview)); setPendingFiles([]) }}
-              disabled={uploading}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
-            >
-              Clear
-            </button>
+            {!uploading && (
+              <button
+                onClick={() => { pendingFiles.forEach(({ preview }) => URL.revokeObjectURL(preview)); setPendingFiles([]) }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </div>
       )}

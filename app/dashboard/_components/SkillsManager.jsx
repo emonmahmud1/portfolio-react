@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Trash2, Edit, Plus, X, Save } from 'lucide-react'
 import { availableIcons } from '@/data/icons'
 import { renderIcon } from '@/data/iconMap'
+import { toast } from 'sonner'
 
 const EMPTY_FORM = { title: '', description: '', iconName: '', iconColor: '', isCustomIcon: false }
 
@@ -26,32 +27,37 @@ export default function SkillsManager() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.iconName) {
-      alert('Please select an icon')
+      toast.error('Please select an icon')
       return
     }
     setLoading(true)
-    if (editing) {
-      await fetch('/api/skills', {
-        method: 'PUT',
+    
+    try {
+      const res = await fetch('/api/skills', {
+        method: editing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _id: editing, ...form }),
+        body: JSON.stringify(editing ? { _id: editing, ...form } : form),
       })
-    } else {
-      await fetch('/api/skills', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+      
+      const data = await res.json()
+      
+      if (res.ok && data.success) {
+        toast.success(data.message)
+        setForm(EMPTY_FORM)
+        setEditing(null)
+        setShowForm(false)
+        fetchSkills()
+      } else {
+        toast.error(data.error || 'Something went wrong')
+      }
+    } catch {
+      toast.error('Connection error')
+    } finally {
+      setLoading(false)
     }
-    setForm(EMPTY_FORM)
-    setEditing(null)
-    setShowForm(false)
-    setLoading(false)
-    fetchSkills()
   }
 
   const handleEdit = (skill) => {
-    // Check if the icon is in available list
     const isKnown = availableIcons.some(i => i.value === skill.iconName)
     setForm({ 
       title: skill.title, 
@@ -67,12 +73,23 @@ export default function SkillsManager() {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this skill?')) return
-    await fetch('/api/skills', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    fetchSkills()
+    
+    try {
+      const res = await fetch('/api/skills', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        toast.success(data.message)
+        fetchSkills()
+      } else {
+        toast.error(data.error || 'Delete failed')
+      }
+    } catch {
+      toast.error('Connection error')
+    }
   }
 
   const handleCancel = () => {
