@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Trash2, Edit, Plus, X, Save, Globe, Github, ImageIcon, GripVertical, Loader2, UploadCloud } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import { toast } from 'sonner'
 
 const EMPTY_FORM = { name: '', description: '', liveLink: '', frontend: '', backend: '', images: [], techStack: [] }
 
@@ -32,13 +33,19 @@ export default function ProjectsManager() {
 
     // Save order to server
     try {
-      await fetch('/api/projects/reorder', {
+      const res = await fetch('/api/projects/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: items.map(p => p._id) }),
       })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Order saved')
+      } else {
+        toast.error(data.error || 'Failed to save order')
+      }
     } catch {
-      console.error('Failed to save order')
+      toast.error('Failed to save order')
     }
   }
 
@@ -50,18 +57,29 @@ export default function ProjectsManager() {
     const formData = new FormData()
     files.forEach(f => formData.append('files', f))
     
-    try {
-      const res = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      })
+    const promise = fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    }).then(async res => {
       const data = await res.json()
-      if (data.success && data.files) {
+      if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed')
+      if (data.files) {
         const newImages = data.files.map(f => f.path)
         setForm(prev => ({ ...prev, images: [...prev.images, ...newImages] }))
       }
+      return data.message || 'Images uploaded'
+    })
+
+    toast.promise(promise, {
+      loading: 'Uploading images...',
+      success: (msg) => msg,
+      error: (err) => err.message,
+    })
+
+    try {
+      await promise
     } catch (err) {
-      console.error('Upload failed', err)
+      // already handled
     } finally {
       setLoading(false)
     }
@@ -70,24 +88,30 @@ export default function ProjectsManager() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    if (editing) {
-      await fetch('/api/projects', {
-        method: 'PUT',
+    
+    try {
+      const res = await fetch('/api/projects', {
+        method: editing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _id: editing, ...form }),
+        body: JSON.stringify(editing ? { _id: editing, ...form } : form),
       })
-    } else {
-      await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+      
+      const data = await res.json()
+      
+      if (res.ok && data.success) {
+        toast.success(data.message)
+        setForm(EMPTY_FORM)
+        setEditing(null)
+        setShowForm(false)
+        fetchProjects()
+      } else {
+        toast.error(data.error || 'Something went wrong')
+      }
+    } catch (err) {
+      toast.error('Connection error')
+    } finally {
+      setLoading(false)
     }
-    setForm(EMPTY_FORM)
-    setEditing(null)
-    setShowForm(false)
-    setLoading(false)
-    fetchProjects()
   }
 
   const handleEdit = (project) => {
@@ -107,12 +131,23 @@ export default function ProjectsManager() {
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this project permanently?')) return
-    await fetch('/api/projects', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    fetchProjects()
+    
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        toast.success(data.message)
+        fetchProjects()
+      } else {
+        toast.error(data.error || 'Delete failed')
+      }
+    } catch {
+      toast.error('Connection error')
+    }
   }
 
   const handleCancel = () => {
@@ -128,11 +163,13 @@ export default function ProjectsManager() {
     if (val) {
       setForm({ ...form, images: [...form.images, val] })
       setImageInput('')
+      toast.info('Image URL added')
     }
   }
 
   const removeImage = (index) => {
     setForm({ ...form, images: form.images.filter((_, i) => i !== index) })
+    toast.info('Image removed')
   }
 
   const addTech = () => {

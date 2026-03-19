@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FolderKanban, Wrench, Home, FileText, Image, ExternalLink, ArrowRight, Activity, Database, Loader2, Check, AlertTriangle } from 'lucide-react'
+import { FolderKanban, Wrench, Home, FileText, Image, ExternalLink, ArrowRight, Activity, Database, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 function StatCard({ icon: Icon, label, value, color, onClick }) {
   const colors = {
@@ -29,7 +30,6 @@ export default function Overview({ setActiveTab }) {
   const [stats, setStats] = useState({ projects: '—', skills: '—', cv: '—', images: '—' })
   const [hero, setHero] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [seedStatus, setSeedStatus] = useState(null)
   const [seeding, setSeeding] = useState(null)
   const [force, setForce] = useState(false)
 
@@ -57,40 +57,43 @@ export default function Overview({ setActiveTab }) {
     if (!confirm(`Are you sure you want to ${actionText} ${type}?`)) return
     
     setSeeding(type)
-    setSeedStatus(null)
-    
-    try {
-      const res = await fetch('/api/seed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, force })
-      })
-      
+    const promise = fetch('/api/seed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, force })
+    }).then(async res => {
       const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || 'Seed failed')
       
-      if (data.success) {
-        const parts = []
-        if (data.results.skills) {
-          if (data.results.skills.skipped) parts.push(`Skills: skipped (already exist)`)
-          else parts.push(`Skills: ${data.results.skills.inserted} inserted ✓`)
-        }
-        if (data.results.projects) {
-          if (data.results.projects.skipped) parts.push(`Projects: skipped (already exist)`)
-          else parts.push(`Projects: ${data.results.projects.inserted} inserted ✓`)
-        }
-        setSeedStatus({ type: 'success', text: parts.join(' · ') || 'Done!' })
-        
-        // Refresh stats
-        const [p, s] = await Promise.all([
-          fetch('/api/projects').then(r => r.json()),
-          fetch('/api/skills').then(r => r.json())
-        ])
-        setStats(prev => ({ ...prev, projects: Array.isArray(p) ? p.length : prev.projects, skills: Array.isArray(s) ? s.length : prev.skills }))
-      } else {
-        setSeedStatus({ type: 'error', text: data.error || 'Seed failed' })
+      // Refresh stats
+      const [p, s] = await Promise.all([
+        fetch('/api/projects').then(r => r.json()),
+        fetch('/api/skills').then(r => r.json())
+      ])
+      setStats(prev => ({ ...prev, projects: Array.isArray(p) ? p.length : prev.projects, skills: Array.isArray(s) ? s.length : prev.skills }))
+      
+      const parts = []
+      if (data.results.skills) {
+        if (data.results.skills.skipped) parts.push(`Skills: skipped`)
+        else parts.push(`Skills: ${data.results.skills.inserted} inserted`)
       }
+      if (data.results.projects) {
+        if (data.results.projects.skipped) parts.push(`Projects: skipped`)
+        else parts.push(`Projects: ${data.results.projects.inserted} inserted`)
+      }
+      return parts.join(' · ') || 'Done!'
+    })
+
+    toast.promise(promise, {
+      loading: `Seeding ${type}...`,
+      success: (msg) => `Success: ${msg}`,
+      error: (err) => `Error: ${err.message}`,
+    })
+
+    try {
+      await promise
     } catch (err) {
-      setSeedStatus({ type: 'error', text: 'Connection error — check your MongoDB connection' })
+      // already handled by toast
     } finally {
       setSeeding(null)
     }
@@ -209,19 +212,6 @@ export default function Overview({ setActiveTab }) {
             {force ? '⚠️ Force Overwrite — will DELETE existing data first!' : 'Safe Mode (skip if data exists)'}
           </span>
         </label>
-
-        {/* Status message */}
-        {seedStatus && (
-          <div className={`flex items-start gap-2 px-4 py-3 rounded-lg text-sm mb-4 ${
-            seedStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200'
-              : seedStatus.type === 'warn' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
-            {seedStatus.type === 'success' ? <Check size={15} className="mt-0.5 flex-shrink-0" />
-              : <AlertTriangle size={15} className="mt-0.5 flex-shrink-0" />}
-            <span>{seedStatus.text}</span>
-          </div>
-        )}
 
         {/* Seed Buttons */}
         <div className="flex flex-wrap gap-3">
