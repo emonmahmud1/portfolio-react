@@ -29,8 +29,9 @@ export default function Overview({ setActiveTab }) {
   const [stats, setStats] = useState({ projects: '—', skills: '—', cv: '—', images: '—' })
   const [hero, setHero] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [seedStatus, setSeedStatus] = useState(null) // { type, text }
-  const [seeding, setSeeding] = useState(null) // 'skills' | 'projects' | null
+  const [seedStatus, setSeedStatus] = useState(null)
+  const [seeding, setSeeding] = useState(null)
+  const [force, setForce] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -50,6 +51,50 @@ export default function Overview({ setActiveTab }) {
       setLoading(false)
     })
   }, [])
+
+  const handleSeed = async (type) => {
+    const actionText = force ? 'DELETE existing data and re-seed' : 'seed'
+    if (!confirm(`Are you sure you want to ${actionText} ${type}?`)) return
+    
+    setSeeding(type)
+    setSeedStatus(null)
+    
+    try {
+      const res = await fetch('/api/seed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, force })
+      })
+      
+      const data = await res.json()
+      
+      if (data.success) {
+        const parts = []
+        if (data.results.skills) {
+          if (data.results.skills.skipped) parts.push(`Skills: skipped (already exist)`)
+          else parts.push(`Skills: ${data.results.skills.inserted} inserted ✓`)
+        }
+        if (data.results.projects) {
+          if (data.results.projects.skipped) parts.push(`Projects: skipped (already exist)`)
+          else parts.push(`Projects: ${data.results.projects.inserted} inserted ✓`)
+        }
+        setSeedStatus({ type: 'success', text: parts.join(' · ') || 'Done!' })
+        
+        // Refresh stats
+        const [p, s] = await Promise.all([
+          fetch('/api/projects').then(r => r.json()),
+          fetch('/api/skills').then(r => r.json())
+        ])
+        setStats(prev => ({ ...prev, projects: Array.isArray(p) ? p.length : prev.projects, skills: Array.isArray(s) ? s.length : prev.skills }))
+      } else {
+        setSeedStatus({ type: 'error', text: data.error || 'Seed failed' })
+      }
+    } catch (err) {
+      setSeedStatus({ type: 'error', text: 'Connection error — check your MongoDB connection' })
+    } finally {
+      setSeeding(null)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -145,12 +190,27 @@ export default function Overview({ setActiveTab }) {
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <Database className="w-4 h-4 text-gray-500" />
-          <h3 className="font-semibold text-gray-900">Seed Default Data</h3>
+          <h3 className="font-semibold text-gray-900">Seed Default Data to MongoDB</h3>
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Import your existing skill set and projects into MongoDB. Skips automatically if data already exists.
+          Import your existing static skills and projects into MongoDB. <br/>
+          <span className="text-gray-400 text-xs">Safe mode skips if data already exists. Use <strong>Force Overwrite</strong> to replace everything.</span>
         </p>
 
+        {/* Force Toggle */}
+        <label className="flex items-center gap-2 mb-4 cursor-pointer w-fit select-none">
+          <div
+            onClick={() => setForce(f => !f)}
+            className={`relative w-10 h-5 rounded-full transition-colors duration-300 ${force ? 'bg-red-500' : 'bg-gray-200'}`}
+          >
+            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300 ${force ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          </div>
+          <span className={`text-sm font-medium ${force ? 'text-red-600' : 'text-gray-600'}`}>
+            {force ? '⚠️ Force Overwrite — will DELETE existing data first!' : 'Safe Mode (skip if data exists)'}
+          </span>
+        </label>
+
+        {/* Status message */}
         {seedStatus && (
           <div className={`flex items-start gap-2 px-4 py-3 rounded-lg text-sm mb-4 ${
             seedStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200'
@@ -163,33 +223,35 @@ export default function Overview({ setActiveTab }) {
           </div>
         )}
 
+        {/* Seed Buttons */}
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => handleSeed('skills')}
             disabled={!!seeding}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
           >
             {seeding === 'skills' ? <Loader2 size={14} className="animate-spin" /> : <Wrench size={14} />}
-            Import 21 Default Skills
+            Seed Skills (21 items)
           </button>
           <button
             onClick={() => handleSeed('projects')}
             disabled={!!seeding}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             {seeding === 'projects' ? <Loader2 size={14} className="animate-spin" /> : <FolderKanban size={14} />}
-            Import Projects from JSON
+            Seed Projects (5 items)
           </button>
           <button
             onClick={() => handleSeed('both')}
             disabled={!!seeding}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
           >
             {seeding === 'both' ? <Loader2 size={14} className="animate-spin" /> : <Database size={14} />}
-            Import Both
+            Seed Both
           </button>
         </div>
       </div>
+
     </div>
   )
 }

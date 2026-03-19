@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { Trash2, Edit, Plus, X, Save, Globe, Github, ImageIcon } from 'lucide-react'
 
-const EMPTY_FORM = { name: '', description: '', liveLink: '', frontend: '', backend: '', images: [] }
+const EMPTY_FORM = { name: '', description: '', liveLink: '', frontend: '', backend: '', images: [], techStack: [] }
 
 export default function ProjectsManager() {
   const [projects, setProjects] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [editing, setEditing] = useState(null)
   const [imageInput, setImageInput] = useState('')
+  const [techInput, setTechInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
@@ -52,6 +53,7 @@ export default function ProjectsManager() {
       frontend: project.frontend || '',
       backend: project.backend || '',
       images: project.images || [],
+      techStack: project.techStack || [],
     })
     setEditing(project._id)
     setShowForm(true)
@@ -72,6 +74,8 @@ export default function ProjectsManager() {
     setForm(EMPTY_FORM)
     setEditing(null)
     setShowForm(false)
+    setTechInput('')
+    setImageInput('')
   }
 
   const addImage = () => {
@@ -84,6 +88,18 @@ export default function ProjectsManager() {
 
   const removeImage = (index) => {
     setForm({ ...form, images: form.images.filter((_, i) => i !== index) })
+  }
+
+  const addTech = () => {
+    const val = techInput.trim()
+    if (val && !form.techStack.includes(val)) {
+      setForm({ ...form, techStack: [...form.techStack, val] })
+      setTechInput('')
+    }
+  }
+
+  const removeTech = (index) => {
+    setForm({ ...form, techStack: form.techStack.filter((_, i) => i !== index) })
   }
 
   return (
@@ -172,13 +188,49 @@ export default function ProjectsManager() {
               </div>
             </div>
 
-            {/* Images */}
+            {/* Tech Stack */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Project Images</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Tech Stack</label>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="/images/project/screenshot.png"
+                  placeholder="e.g. React, Node.js, MongoDB"
+                  value={techInput}
+                  onChange={(e) => setTechInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTech())}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={addTech}
+                  disabled={!techInput.trim()}
+                  className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors disabled:opacity-40"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Press Enter or + to add each tech. These show as tags on your project card.</p>
+              {form.techStack.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {form.techStack.map((tech, i) => (
+                    <div key={i} className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-gray-900 text-white rounded-full text-xs font-medium">
+                      {tech}
+                      <button type="button" onClick={() => removeTech(i)} className="text-gray-300 hover:text-white transition-colors rounded p-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Images */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Project Images (URLs or /public paths)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="/images/project/screenshot.png or https://..."
                   value={imageInput}
                   onChange={(e) => setImageInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}

@@ -25,6 +25,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
-    return res.status(500).json({ error: 'Server error' })
+    console.error('API Error /api/hero:', error)
+    return res.status(500).json({ error: 'Server error', details: error.message })
   }
 }
