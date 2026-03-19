@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Upload, Trash2, FileText, Download, CheckCircle, AlertCircle, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 function formatBytes(bytes) {
   if (!bytes) return '—'
@@ -20,7 +21,6 @@ export default function CVManager() {
   const [label, setLabel] = useState('')
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState(null) // { type: 'success'|'error', message }
   const [progress, setProgress] = useState(0)
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef(null)
@@ -30,29 +30,33 @@ export default function CVManager() {
   }, [])
 
   const fetchCVFiles = async () => {
-    const res = await fetch('/api/cv')
-    if (res.ok) {
-      const data = await res.json()
-      setCvFiles(Array.isArray(data) ? data : [])
+    try {
+      const res = await fetch('/api/cv')
+      if (res.ok) {
+        const data = await res.json()
+        setCvFiles(Array.isArray(data) ? data : [])
+      }
+    } catch {
+      toast.error('Failed to load CV files')
     }
   }
 
   const handleFilePick = (picked) => {
     if (!picked) return
     if (picked.type !== 'application/pdf') {
-      setUploadStatus({ type: 'error', message: 'Only PDF files are allowed' })
+      toast.error('Only PDF files are allowed')
       return
     }
-    if (picked.size > 5 * 1024 * 1024) {
-      setUploadStatus({ type: 'error', message: 'File size must be under 5MB' })
+    if (picked.size > 10 * 1024 * 1024) { // Increased to 10MB to be safer for CVs
+      toast.error('File size must be under 10MB')
       return
     }
     setFile(picked)
-    setUploadStatus(null)
     // Auto-fill label from filename if empty
     if (!label.trim()) {
       setLabel(picked.name.replace(/\.pdf$/i, '').replace(/[_-]/g, ' '))
     }
+    toast.success('File selected: ' + picked.name)
   }
 
   const handleDrop = (e) => {
@@ -65,25 +69,23 @@ export default function CVManager() {
   const handleUpload = async (e) => {
     e.preventDefault()
     if (!file) {
-      setUploadStatus({ type: 'error', message: 'Please select a PDF file' })
+      toast.error('Please select a PDF file')
       return
     }
     if (!label.trim()) {
-      setUploadStatus({ type: 'error', message: 'Please enter a label for this CV' })
+      toast.error('Please enter a label for this CV')
       return
     }
 
     setUploading(true)
     setProgress(0)
-    setUploadStatus(null)
 
     const formData = new FormData()
     formData.append('file', file)
     formData.append('label', label.trim())
 
     try {
-      // Simulate progress with XHR for better UX
-      const result = await new Promise((resolve, reject) => {
+      const promise = new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
@@ -92,7 +94,12 @@ export default function CVManager() {
         })
         xhr.addEventListener('load', () => {
           try {
-            resolve({ ok: xhr.status < 400, data: JSON.parse(xhr.responseText) })
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status < 400 && data.success) {
+              resolve(data)
+            } else {
+              reject(new Error(data.error || 'Upload failed'))
+            }
           } catch {
             reject(new Error('Upload failed'))
           }
@@ -102,18 +109,20 @@ export default function CVManager() {
         xhr.send(formData)
       })
 
-      if (result.ok) {
-        setUploadStatus({ type: 'success', message: `"${label.trim()}" uploaded successfully and added to your CV links!` })
-        setFile(null)
-        setLabel('')
-        setProgress(0)
-        if (fileInputRef.current) fileInputRef.current.value = ''
-        fetchCVFiles()
-      } else {
-        setUploadStatus({ type: 'error', message: result.data?.error || 'Upload failed' })
-      }
+      toast.promise(promise, {
+        loading: 'Uploading CV...',
+        success: (data) => data.message || 'CV uploaded successfully!',
+        error: (err) => err.message,
+      })
+
+      await promise
+      setFile(null)
+      setLabel('')
+      setProgress(0)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      fetchCVFiles()
     } catch (err) {
-      setUploadStatus({ type: 'error', message: err.message || 'Upload failed' })
+      // already handled by toast.promise
     } finally {
       setUploading(false)
     }
@@ -121,12 +130,23 @@ export default function CVManager() {
 
   const handleDelete = async (id, name) => {
     if (!confirm(`Delete "${name}"? This will also remove it from your CV download links.`)) return
-    const res = await fetch('/api/cv', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    if (res.ok) fetchCVFiles()
+    
+    try {
+      const res = await fetch('/api/cv', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        toast.success(data.message || 'Deleted')
+        fetchCVFiles()
+      } else {
+        toast.error(data.error || 'Delete failed')
+      }
+    } catch {
+      toast.error('Connection error')
+    }
   }
 
   return (
@@ -149,24 +169,6 @@ export default function CVManager() {
         </div>
 
         <form onSubmit={handleUpload} className="p-6 space-y-4">
-          {/* Status Messages */}
-          {uploadStatus && (
-            <div className={`flex items-start gap-3 p-3 rounded-lg ${
-              uploadStatus.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}>
-              {uploadStatus.type === 'success'
-                ? <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                : <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              }
-              <span className="text-sm">{uploadStatus.message}</span>
-              <button type="button" onClick={() => setUploadStatus(null)} className="ml-auto flex-shrink-0 opacity-60 hover:opacity-100">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
           {/* Label */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -235,7 +237,7 @@ export default function CVManager() {
                   <p className="text-sm font-medium text-gray-700">
                     {dragOver ? 'Drop your PDF here' : 'Drag & drop or click to select'}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">PDF only · Max 5MB</p>
+                  <p className="text-xs text-gray-400 mt-1">PDF only · Max 10MB</p>
                 </div>
               )}
             </div>
